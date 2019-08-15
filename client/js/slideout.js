@@ -11,10 +11,13 @@ let menuWidth = 0;
 let menuIsOpen = false;
 let menuIsMoving = false;
 let menuIsAbsolute = false;
+let inTouch = false;
 
 class SlideoutMenu {
 	static enable() {
 		document.body.addEventListener("touchstart", onTouchStart, {passive: true});
+		document.body.addEventListener("touchmove", onTouchMove, {passive: true});
+		document.body.addEventListener("touchend", onTouchEnd, {passive: true});
 	}
 
 	static toggle(state) {
@@ -42,13 +45,15 @@ function onTouchStart(e) {
 
 	if (!menuIsOpen || touchStartPos.screenX > menuWidth) {
 		touchStartTime = Date.now();
-
-		document.body.addEventListener("touchmove", onTouchMove, {passive: true});
-		document.body.addEventListener("touchend", onTouchEnd, {passive: true});
+		inTouch = true;
 	}
 }
 
 function onTouchMove(e) {
+	if (!inTouch) {
+		return;
+	}
+
 	const touch = (touchCurPos = e.touches.item(0));
 	let distX = touch.screenX - touchStartPos.screenX;
 	const distY = touch.screenY - touchStartPos.screenY;
@@ -90,6 +95,10 @@ function onTouchMove(e) {
 }
 
 function onTouchEnd() {
+	if (!inTouch) {
+		return;
+	}
+
 	const diff = touchCurPos.screenX - touchStartPos.screenX;
 	const absDiff = Math.abs(diff);
 
@@ -97,8 +106,6 @@ function onTouchEnd() {
 		SlideoutMenu.toggle(diff > 0);
 	}
 
-	document.body.removeEventListener("touchmove", onTouchMove);
-	document.body.removeEventListener("touchend", onTouchEnd);
 	viewport.classList.toggle("menu-dragging", false);
 	menu.style.transform = null;
 	sidebarOverlay.style.opacity = null;
@@ -107,6 +114,7 @@ function onTouchEnd() {
 	touchCurPos = null;
 	touchStartTime = 0;
 	menuIsMoving = false;
+	inTouch = false;
 }
 
 module.exports = SlideoutMenu;
